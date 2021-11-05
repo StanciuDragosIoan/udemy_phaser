@@ -20,19 +20,17 @@ const config = {
 };
 
 const VELOCITY = 200;
+const PIPES_TO_RENDER = 4;
 
 let flapVelocity = 250;
 let bird;
+let pipes = null;
 
-let upperPipe;
-let lowerPipe;
+let pipeHorizontalDistance = 0;
 
 const pipeVerticalDistanceRange = [150, 250];
-let pipeVerticalDistance = Phaser.Math.Between(...pipeVerticalDistanceRange);
-let pipeVerticalPosition = Phaser.Math.Between(
-  0 + 20,
-  config.height - 20 - pipeVerticalDistance
-);
+const pipeHorizontalDistanceRange = [500, 550];
+
 const initialBirdPosition = {
   x: config.width * 0.1,
   y: config.height / 2,
@@ -57,12 +55,18 @@ function create() {
     .setOrigin(0);
 
   bird.body.gravity.y = 400;
-  upperPipe = this.physics.add
-    .sprite(400, pipeVerticalPosition, "pipe")
-    .setOrigin(0, 1);
-  lowerPipe = this.physics.add
-    .sprite(400, upperPipe.y + pipeVerticalDistance, "pipe")
-    .setOrigin(0, 0);
+
+  pipes = this.physics.add.group();
+
+  for (let i = 0; i < PIPES_TO_RENDER; i++) {
+    //create pipe sprite and add it to groups
+    const upperPipe = pipes.create(0, 0, "pipe").setOrigin(0, 1);
+    const lowerPipe = pipes.create(0, 0, "pipe").setOrigin(0, 0);
+
+    placePipe(upperPipe, lowerPipe);
+  }
+
+  pipes.setVelocityX(-200);
 
   this.input.on("pointerdown", flap);
 
@@ -86,9 +90,40 @@ function update(time, delta) {
   }
 }
 
+const placePipe = (uPipe, lPipe) => {
+  const rightMostX = getRightMostPipe();
+  const pipeVerticalDistance = Phaser.Math.Between(
+    ...pipeVerticalDistanceRange
+  );
+  const pipeVerticalPosition = Phaser.Math.Between(
+    0 + 20,
+    config.height - 20 - pipeVerticalDistance
+  );
+  const pipeHorizontalDistance = Phaser.Math.Between(
+    ...pipeHorizontalDistanceRange
+  );
+
+  uPipe.x = rightMostX + pipeHorizontalDistance;
+  uPipe.y = pipeVerticalPosition;
+
+  lPipe.x = uPipe.x;
+  lPipe.y = uPipe.y + pipeVerticalDistance;
+};
+
 const flap = () => {
   bird.body.velocity.y = -flapVelocity;
 };
+
+function getRightMostPipe() {
+  let rightMostX = 0;
+  debugger;
+  pipes.getChildren().forEach(function (pipe) {
+    debugger;
+    rightMostX = Math.max(pipe.x, rightMostX);
+  });
+
+  return rightMostX;
+}
 
 const restartBirdPosition = () => {
   bird.x = initialBirdPosition.x;
