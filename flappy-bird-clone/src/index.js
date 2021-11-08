@@ -1,10 +1,21 @@
 import Phaser from "phaser";
+import PlayScene from "./scenes/PlayScene";
 
+const WIDTH = 800;
+const HEIHGT = 600;
+const BIRD_POSITION = {
+  x: WIDTH * 0.1,
+  y: HEIHGT / 2,
+};
+const SHARED_CONFIG = {
+  width: WIDTH,
+  height: HEIHGT,
+  startPosition: BIRD_POSITION,
+};
 const config = {
   // WebGL (Web Graphics Library) JS API for rendering 2d and 3d graphics
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  ...SHARED_CONFIG,
   physics: {
     //arcade physics default mode (physics plugin that manages physics simulation)
     default: "arcade",
@@ -12,11 +23,7 @@ const config = {
       debug: true,
     },
   },
-  scene: {
-    preload,
-    create,
-    update,
-  },
+  scene: [new PlayScene(SHARED_CONFIG)],
 };
 
 const VELOCITY = 200;
@@ -77,7 +84,6 @@ function create() {
 // t1 = 200px/sec
 // t2 = 400px/sec
 // t3 = 600px/sec
-console.log("test");
 //60fps s
 // 60 times / second
 // 16 * 60ms = around 1000ms
@@ -88,6 +94,8 @@ function update(time, delta) {
   ) {
     restartBirdPosition();
   }
+
+  recyclePipes();
 }
 
 const placePipe = (uPipe, lPipe) => {
@@ -110,15 +118,28 @@ const placePipe = (uPipe, lPipe) => {
   lPipe.y = uPipe.y + pipeVerticalDistance;
 };
 
+function recyclePipes() {
+  const tempPipes = [];
+  pipes.getChildren().forEach((pipe) => {
+    if (pipe.getBounds().right <= 0) {
+      //recycle pipe
+      // console.log(...pipe);
+      tempPipes.push(pipe);
+      if (tempPipes.length === 2) {
+        placePipe(...tempPipes);
+      }
+    }
+  });
+}
+
 const flap = () => {
   bird.body.velocity.y = -flapVelocity;
 };
 
 function getRightMostPipe() {
   let rightMostX = 0;
-  debugger;
+
   pipes.getChildren().forEach(function (pipe) {
-    debugger;
     rightMostX = Math.max(pipe.x, rightMostX);
   });
 
