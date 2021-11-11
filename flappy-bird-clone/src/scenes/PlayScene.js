@@ -11,7 +11,10 @@ class PlayScene extends Phaser.Scene {
     this.pipeHorizontalDistance = 0;
     this.pipeVerticalDistanceRange = [150, 250];
     this.pipeHorizontalDistanceRange = [500, 550];
-    this.flapVelocity = 250;
+    this.flapVelocity = 300;
+
+    this.score = 0;
+    this.scoreText = "";
   }
 
   preload() {
@@ -25,6 +28,7 @@ class PlayScene extends Phaser.Scene {
     this.createBird();
     this.createPipes();
     this.createColliders();
+    this.createScore();
     this.handleInputs();
   }
 
@@ -45,7 +49,7 @@ class PlayScene extends Phaser.Scene {
       .sprite(this.config.startPosition.x, this.config.startPosition.y, "bird")
       .setOrigin(0);
 
-    this.bird.body.gravity.y = 400;
+    this.bird.body.gravity.y = 600;
     this.bird.body.setCollideWorldBounds();
   }
 
@@ -70,6 +74,19 @@ class PlayScene extends Phaser.Scene {
 
   createColliders() {
     this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);
+  }
+
+  createScore() {
+    this.score = 0;
+    const bestScore = localStorage.getItem("bestScore");
+    this.scoreText = this.add.text(16, 16, `Score: ${0}`, {
+      fontSize: "32px",
+      color: "#000",
+    });
+    this.add.text(16, 50, `Best Score: ${bestScore || 0}`, {
+      fontSize: "18px",
+      color: "#000",
+    });
   }
 
   handleInputs() {
@@ -113,6 +130,7 @@ class PlayScene extends Phaser.Scene {
         tempPipes.push(pipe);
         if (tempPipes.length === 2) {
           this.placePipe(...tempPipes);
+          this.increaseScore();
         }
       }
     });
@@ -128,16 +146,35 @@ class PlayScene extends Phaser.Scene {
     return rightMostX;
   }
 
+  setBestScore() {
+    const bestScoreText = localStorage.getItem("bestScore");
+    const bestScore = bestScoreText && parseInt(bestScoreText, 10);
+
+    if (!bestScore || this.score > bestScore) {
+      localStorage.setItem("bestScore", this.score);
+    }
+  }
+
   gameOver() {
-    // this.bird.x = this.config.startPosition.x;
-    // this.bird.y = this.config.startPosition.y;
-    // this.bird.body.velocity.y = 0;
     this.physics.pause();
     this.bird.setTint(0xee4824);
+    this.setBestScore();
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.scene.restart();
+      },
+      loop: false,
+    });
   }
 
   flap() {
     this.bird.body.velocity.y = -this.flapVelocity;
+  }
+
+  increaseScore() {
+    this.score += 1;
+    this.scoreText.setText(`Score: ${this.score}`);
   }
 }
 
